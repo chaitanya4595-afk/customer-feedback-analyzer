@@ -10,10 +10,9 @@ workflow that structures this text and summarizes successful analyses while
 keeping individual results available for review.
 
 The project combines a Streamlit dashboard, a validated FastAPI service, Google
-Gemini structured output, and local SQLite storage. It is designed as a focused
-portfolio project: small enough to understand quickly, but complete enough to
-show UI, API, AI integration, analytics, persistence, testing, and failure
-handling working together.
+Gemini structured output, and local SQLite storage. The architecture is kept
+intentionally small while still covering UI, API, AI integration, analytics,
+persistence, testing, and failure handling.
 
 ## 🚀 Live Demo
 
@@ -125,10 +124,9 @@ failure-handling details.
 │   ├── models.py                       # Pydantic API models
 │   └── service.py                      # Gemini integration
 ├── tests/                              # Unit and API tests
-├── docs/images/                        # Future screenshots
+├── docs/images/                        # Screenshots
 ├── .env.example                        # Safe configuration template
 ├── ARCHITECTURE.md
-├── PROJECT_SUMMARY.md
 ├── pyproject.toml
 └── uv.lock
 ```
@@ -270,9 +268,3 @@ consume API credits.
 - Add database migrations before evolving the persisted schema
 - Create an evaluation dataset for sentiment and theme quality
 - Add authentication and a production-ready data store for multi-user use
-
-## Additional portfolio notes
-
-[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) contains a concise project description,
-resume bullets, an interview explanation, technical challenges, and potential
-business applications.
