@@ -15,6 +15,19 @@ portfolio project: small enough to understand quickly, but complete enough to
 show UI, API, AI integration, analytics, persistence, testing, and failure
 handling working together.
 
+## 🚀 Live Demo
+
+[Try the Customer Feedback Analyzer](https://customer-feedback-analyzer-748gprrueqgffnaygsoevu.streamlit.app/)
+
+The deployed architecture is:
+
+- Streamlit Community Cloud — frontend
+- Render — FastAPI backend
+- Google Gemini — AI analysis
+
+> **Note:** The Render backend may have a cold start after inactivity, so the
+> first analysis request can take longer.
+
 ## Key features
 
 - Analyze multiple customer reviews entered one per line
@@ -256,8 +269,7 @@ consume API credits.
 - Support asynchronous or batched analysis for larger datasets
 - Add database migrations before evolving the persisted schema
 - Create an evaluation dataset for sentiment and theme quality
-- Add authentication and a production-ready data store if deployed
-- Add deployment configuration only when a hosting target is selected
+- Add authentication and a production-ready data store for multi-user use
 
 ## Additional portfolio notes
 
