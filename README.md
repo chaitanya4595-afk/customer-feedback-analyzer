@@ -1,73 +1,194 @@
 # Customer Feedback Analyzer
 
-A small AI-powered dashboard that turns customer reviews into structured,
-business-friendly insights. Each review is classified by sentiment, assigned a
-score from 1 to 5, and grouped under a one-word theme such as `delivery`,
-`price`, or `service`.
+> Turn unstructured customer reviews into consistent sentiment, satisfaction
+> scores, and topic themes through an interactive analytics dashboard.
 
-The project combines:
+Organizations collect valuable feedback in reviews and surveys, but reading
+each response manually makes it difficult to spot recurring topics and overall
+sentiment. Customer Feedback Analyzer demonstrates a practical applied AI
+workflow that structures this text and summarizes successful analyses while
+keeping individual results available for review.
 
-- **Streamlit** for the interactive dashboard
-- **FastAPI** for the analysis API
-- **Google Gemini** for structured review analysis
-- **SQLite** for persistent review history
+The project combines a Streamlit dashboard, a validated FastAPI service, Google
+Gemini structured output, and local SQLite storage. It is designed as a focused
+portfolio project: small enough to understand quickly, but complete enough to
+show UI, API, AI integration, analytics, persistence, testing, and failure
+handling working together.
 
-## How it works
+## Key features
 
-1. A user pastes one or more reviews into the Streamlit dashboard.
-2. The dashboard sends each review to the FastAPI `POST /analyze` endpoint.
-3. The API asks Gemini to return a sentiment label, score, and theme.
-4. The dashboard displays the individual results and an overall summary.
-5. The user can save the results to the local SQLite database.
+- Analyze multiple customer reviews entered one per line
+- Classify each review as positive, negative, or neutral
+- Assign a validated satisfaction score from 1 to 5
+- Identify a one-word primary theme such as `delivery` or `service`
+- Show submitted, successful, and failed review counts
+- Calculate average score and positive percentage from successful reviews only
+- Highlight the most common theme
+- Continue processing when an individual review fails
+- Save only successful results to a local SQLite database
+- Browse previously saved feedback in the dashboard
+- Configure the model, endpoint, timeout, credentials, and database path through
+  environment variables
 
-## Requirements
+## Business problem
+
+Customer feedback is usually unstructured, which creates friction for analysts
+and business owners who want a quick view of satisfaction and recurring issues.
+This application turns a small batch of raw reviews into a consistent table and
+basic summary metrics, making exploratory feedback review faster and easier.
+
+It is a decision-support prototype rather than a replacement for human review.
+AI-generated labels can be wrong, and the current application does not claim
+production accuracy or measured business impact.
+
+## Example workflow
+
+A restaurant owner receives these comments:
+
+```text
+The delivery arrived early and everything was still hot.
+The meal was fine, but it felt expensive for the portion size.
+Customer service never replied to my message.
+```
+
+The user pastes the three lines into Streamlit and selects **Analyze**. The
+dashboard sends each review to FastAPI, displays Gemini's validated sentiment,
+score, and theme responses, and then presents batch-level summary metrics. The
+user may save the successful rows and inspect them later in saved history.
+
+Because the application uses a generative model, exact classifications can vary
+between requests.
+
+## Architecture
+
+```text
+User
+  │
+  ▼
+Streamlit dashboard ── POST /analyze ──► FastAPI + Pydantic validation
+  │                                             │
+  │                                             ▼
+  │                                      Google Gemini API
+  │                                             │
+  ◄──────── validated sentiment, score, theme ──┘
+  │
+  ├── summary calculations
+  └── optional save/history ──► SQLite
+```
+
+FastAPI receives one review per request. Gemini returns a structured response
+that is checked against the same Pydantic model used by the API. Streamlit calls
+the API once per input line, preserves partial successes, excludes failures from
+metrics, and saves only valid results.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for component responsibilities and
+failure-handling details.
+
+## Technology stack
+
+| Technology | Role |
+| --- | --- |
+| Python 3.12+ | Application language |
+| Streamlit | Interactive dashboard |
+| FastAPI | REST API and OpenAPI documentation |
+| Pydantic | Input and structured-output validation |
+| Google Gen AI SDK | Gemini integration |
+| SQLite | Local review persistence |
+| Requests | Dashboard-to-API HTTP client |
+| pytest | Automated tests |
+| uv | Dependency and environment management |
+
+## Project structure
+
+```text
+.
+├── api.py                              # Thin FastAPI entry point
+├── app.py                              # Streamlit entry point
+├── src/project_feedback_analyzer/
+│   ├── analytics.py                    # Summary calculations
+│   ├── api.py                          # FastAPI application factory/routes
+│   ├── config.py                       # Environment configuration
+│   ├── database.py                     # SQLite persistence
+│   ├── models.py                       # Pydantic API models
+│   └── service.py                      # Gemini integration
+├── tests/                              # Unit and API tests
+├── docs/images/                        # Future screenshots
+├── .env.example                        # Safe configuration template
+├── ARCHITECTURE.md
+├── PROJECT_SUMMARY.md
+├── pyproject.toml
+└── uv.lock
+```
+
+## Local setup
+
+### Prerequisites
 
 - Python 3.12 or newer
-- [`uv`](https://docs.astral.sh/uv/)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - A Google Gemini API key
 
-## Setup
-
-Clone the repository, enter the project directory, and install the locked
-dependencies:
+### 1. Clone and install
 
 ```bash
-uv sync
+git clone <your-repository-url>
+cd project-feedback-analyzer
+uv sync --dev
 ```
 
-Create a `.env` file in the project root and add your Gemini API key:
+### 2. Configure environment variables
+
+Copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+Replace the placeholder key in `.env`:
 
 ```env
-GEMINI_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-The Google Gen AI SDK also supports `GOOGLE_API_KEY`. Keep API keys out of
-source control.
+`.env` is excluded by `.gitignore` and must never be committed.
+
+### Environment variables
+
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `GEMINI_API_KEY` | Yes | None | Authenticates Gemini requests |
+| `GOOGLE_API_KEY` | Alternative | None | Supported fallback credential name |
+| `GEMINI_MODEL` | No | `gemini-3.6-flash` | Gemini model used by FastAPI |
+| `FASTAPI_URL` | No | `http://127.0.0.1:8000/analyze` | Endpoint called by Streamlit |
+| `HTTP_TIMEOUT` | No | `30` | Per-review HTTP timeout in seconds |
+| `DATABASE_PATH` | No | `feedback.db` | SQLite database location |
 
 ## Run the application
 
-The backend and dashboard run as separate processes. Start the API in one
-terminal:
+The API and dashboard run in separate terminals.
+
+### Terminal 1: FastAPI
 
 ```bash
 uv run fastapi dev api.py
 ```
 
-The API will be available at `http://127.0.0.1:8000`. Its interactive OpenAPI
-documentation is available at `http://127.0.0.1:8000/docs`.
+- API: `http://127.0.0.1:8000`
+- Interactive documentation: `http://127.0.0.1:8000/docs`
+- Health endpoint: `http://127.0.0.1:8000/health`
 
-In a second terminal, start the dashboard:
+### Terminal 2: Streamlit
 
 ```bash
 uv run streamlit run app.py
 ```
 
-Open the URL printed by Streamlit, paste one customer review per line, and
-select **Analyze**. Select **Save to database** to store the current results.
+Open the local URL printed by Streamlit, enter one review per line, and select
+**Analyze**.
 
 ## API usage
 
-Analyze a single review directly:
+Request:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/analyze \
@@ -75,7 +196,7 @@ curl -X POST http://127.0.0.1:8000/analyze \
   -d '{"text":"The delivery was fast and the food was excellent."}'
 ```
 
-Example response:
+Representative response format:
 
 ```json
 {
@@ -85,57 +206,61 @@ Example response:
 }
 ```
 
-The generated values may vary. The API constrains the response to:
+This example illustrates the schema, not a guaranteed classification. Valid
+responses enforce:
 
 - `label`: `positive`, `negative`, or `neutral`
-- `score`: an integer from 1 to 5
-- `theme`: one lowercase word describing the main topic
+- `score`: integer from 1 through 5
+- `theme`: one lowercase alphabetic word
 
-## Dashboard features
+Empty reviews and malformed requests receive HTTP 422. Missing Gemini
+credentials receive HTTP 503, while Gemini failures or unusable provider
+responses receive HTTP 502.
 
-- Analyze multiple reviews in one batch
-- View results in a table
-- See the average score and percentage of positive reviews
-- Identify the most common customer theme
-- Save results locally
-- Browse all previously saved reviews
-- Continue a batch if an individual request fails
+## Testing
 
-## Project structure
+Run the test suite:
 
-```text
-.
-├── api.py                         # FastAPI service and Gemini integration
-├── app.py                         # Streamlit dashboard
-├── database.py                    # SQLite initialization and queries
-├── feedback.db                    # Local review database
-├── pyproject.toml                 # Project metadata and dependencies
-├── uv.lock                        # Reproducible dependency lockfile
-└── src/project_feedback_analyzer/ # Installable Python package
+```bash
+uv run pytest
 ```
 
-## Configuration notes
+Tests cover summary calculations, API input validation, successful mocked
+analysis, provider failures, missing credentials, and SQLite save/load behavior.
+Gemini is mocked in API tests, so the suite does not make external AI calls or
+consume API credits.
 
-- The dashboard expects the API at `http://127.0.0.1:8000/analyze`. Update
-  `API_URL` in `app.py` if the backend runs elsewhere.
-- The API currently uses the model configured in `api.py`.
-- SQLite data is stored in `feedback.db` relative to the directory from which
-  the application is started.
-- Saving the same analysis more than once creates duplicate database rows.
+## Screenshots
 
-## Troubleshooting
+### Dashboard input and results
 
-**The dashboard shows `error` for a review**
+![Customer Feedback Analyzer Dashboard](docs/images/dashboard-results.png)
 
-Confirm that the FastAPI process is running, the API URL is correct, and your
-Gemini API key is available in `.env`.
+## Limitations
 
-**The API fails during startup or analysis**
+- Reviews are analyzed sequentially, so large batches may be slow.
+- The dashboard accepts pasted text only; it does not currently import CSV or
+  spreadsheet files.
+- Themes are generated per review and are not normalized across synonyms.
+- SQLite is appropriate for local use, not concurrent production workloads.
+- There is no authentication or multi-user separation.
+- Duplicate successful results can be saved more than once.
+- AI outputs can vary and should be reviewed before consequential use.
+- The project does not include a measured accuracy benchmark.
 
-Run `uv sync` again, check the API key, and review the backend terminal output
-for the detailed error.
+## Future improvements
 
-**Saved history is missing**
+- Add CSV upload and downloadable results
+- Normalize similar themes into a controlled taxonomy
+- Add charts and time-based trends after introducing timestamps
+- Support asynchronous or batched analysis for larger datasets
+- Add database migrations before evolving the persisted schema
+- Create an evaluation dataset for sentiment and theme quality
+- Add authentication and a production-ready data store if deployed
+- Add deployment configuration only when a hosting target is selected
 
-Start the app from the project root so it reads and writes the expected
-`feedback.db` file.
+## Additional portfolio notes
+
+[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) contains a concise project description,
+resume bullets, an interview explanation, technical challenges, and potential
+business applications.

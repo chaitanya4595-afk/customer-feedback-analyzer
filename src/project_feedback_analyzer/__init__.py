@@ -1,2 +1,3 @@
-def main() -> None:
-    print("Hello from project-feedback-analyzer!")
+"""Customer Feedback Analyzer package."""
+
+__version__ = "0.1.0"

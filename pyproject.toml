@@ -1,7 +1,7 @@
 [project]
 name = "project-feedback-analyzer"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-powered customer feedback analysis with FastAPI, Streamlit, Gemini, and SQLite"
 readme = "README.md"
 authors = [
     { name = "Krishna Rokkam", email = "chaitanya4595@gmail.com" }
@@ -16,8 +16,14 @@ dependencies = [
     "streamlit>=1.58.0",
 ]
 
-[project.scripts]
-project-feedback-analyzer = "project_feedback_analyzer:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
